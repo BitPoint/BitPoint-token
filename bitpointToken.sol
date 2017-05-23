@@ -2,7 +2,6 @@
 
 pragma solidity 0.4.11;
 
-
 contract owned {
    address public owner;
 
@@ -20,13 +19,19 @@ contract owned {
    }
 }
 
-
 contract Bitpoint is owned  
 {
    address creator;     
    uint256 public totalSupply;
-   mapping (address => uint256) balances;
-   uint profit //profit calculation
+   uint profit; //profit calculation
+
+   struct BitToken{
+       uint256 createdOn;
+       uint256 token;
+   }
+
+mapping (address => BitToken) balances;
+
   
    function Bitpoint() public  
    {
@@ -36,54 +41,65 @@ contract Bitpoint is owned
   
     function () payable {
        uint amount = msg.value;
-       balances[msg.sender] = amount;
-       totalSupply += amount;
+       //mint token only if address dont have any token
+       if( balances[msg.sender].token==0){
+         balances[msg.sender].token = amount;
+         totalSupply += amount;
+       }else{
+           return;
+       }
+      
     }
    
     function balanceOf(address _owner) constant returns (uint256 balance) {
-       return balances[_owner];
+       return balances[_owner].token;
    }
-    function transfer(address _to, uint256 _value) returns (bool success) {
+   //return unix timestamp
+    function creationTime(address _owner) constant returns (uint256 createdOn) {
+       return balances[_owner].createdOn;
+   }
+   //not allowed for now
+//     function transfer(address _to, uint256 _value) returns (bool success) {
      
-       if (balances[msg.sender] >= _value && _value > 0) {
-           balances[msg.sender] -= _value;
-           balances[_to] += _value;
-           Transfer(msg.sender, _to, _value);
-           return true;
-       } else { return false; }
-   }
-  
+//        if (balances[msg.sender] >= _value && _value > 0) {
+//            balances[msg.sender] -= _value;
+//            balances[_to] += _value;
+//            Transfer(msg.sender, _to, _value);
+//            return true;
+//        } else { return false; }
+//    }
   
   function getTotalSupply() constant returns (uint) // this doesn't have anything to do with the act of greeting
-   {                                                   // just demonstrating return of some global variable
+   {                                                    
        return totalSupply;
    }
 
-//need to call once in 7 days
- function addProfit() onlyOwner{
-       //check workaround for loop
-       //balances[msg.sender] = balances[msg.sender]  + profit;
-   }
-  
-
-modifier afterDeadline() { if (now >= deadline) _; }
-
-
 function withdraw(){
     // get balance of user
-    amount = balances[msg.sender]
+    var  amount = balances[msg.sender].token;
+    //TODO: calculate profit for user
+    profit = calculateProfit(msg.sender);
+    amount = amount + profit;
+    //mint token for profit
+    totalSupply = totalSupply + profit;
     msg.sender.transfer(amount);
+    //burn token
+    totalSupply = totalSupply - amount;
+}
+
+//TODO
+function calculateProfit(address _sender)constant returns (uint256 amount){
+  return balances[_sender].token;
 }
  
   
-   event Transfer(address indexed _from, address indexed _to, uint256 _value);
+//    event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
    
   
     /**********
     Standard kill() function to recover funds
     **********/
-  
    function kill()
    {
        if (msg.sender == creator)
