@@ -32,6 +32,9 @@ contract Bitpoint is owned
 
 mapping (address => BitToken) balances;
 
+event TokenMinted(address   _for, uint256 _value);
+event TokenBurned( uint256 _value);
+
   
    function Bitpoint() public  
    {
@@ -44,7 +47,9 @@ mapping (address => BitToken) balances;
        //mint token only if address dont have any token
        if( balances[msg.sender].token==0){
          balances[msg.sender].token = amount;
+         balances[msg.sender].createdOn = block.timestamp;
          totalSupply += amount;
+         TokenMinted(msg.sender,amount);
        }else{
            return;
        }
@@ -80,22 +85,20 @@ function withdraw(){
     //TODO: calculate profit for user
     profit = calculateProfit(msg.sender);
     amount = amount + profit;
-    //mint token for profit
     totalSupply = totalSupply + profit;
+    TokenMinted(msg.sender,amount);
     msg.sender.transfer(amount);
-    //burn token
     totalSupply = totalSupply - amount;
+    event TokenBurned(amount);
+
 }
 
 //TODO
 function calculateProfit(address _sender)constant returns (uint256 amount){
   return balances[_sender].token;
 }
- 
-  
 //    event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
-   
   
     /**********
     Standard kill() function to recover funds
