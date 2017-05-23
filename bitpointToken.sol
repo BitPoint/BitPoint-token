@@ -89,7 +89,7 @@ function withdraw(){
     TokenMinted(msg.sender,amount);
     msg.sender.transfer(amount);
     totalSupply = totalSupply - amount;
-    event TokenBurned(amount);
+    TokenBurned(msg.sender,amount);
 
 }
 
