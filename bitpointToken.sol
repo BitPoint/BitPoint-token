@@ -21,6 +21,8 @@ contract owned {
 
 contract Bitpoint is owned  
 {
+    string public constant symbol = "BPT";
+    string public constant name = "Bitpoint Token";
     uint256 public totalSupply;
     uint256 public eurval;
  
