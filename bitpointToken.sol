@@ -19,12 +19,64 @@ contract owned {
    }
 }
 
-contract Bitpoint is owned  
+contract SafeMath {
+  function safeMul(uint a, uint b) internal returns (uint) {
+    uint c = a * b;
+    assert(a == 0 || c / a == b);
+    return c;
+  }
+
+  function safeDiv(uint a, uint b) internal returns (uint) {
+    assert(b > 0);
+    uint c = a / b;
+    assert(a == b * c + a % b);
+    return c;
+  }
+
+  function safeSub(uint a, uint b) internal returns (uint) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  function safeAdd(uint a, uint b) internal returns (uint) {
+    uint c = a + b;
+    assert(c>=a && c>=b);
+    return c;
+  }
+
+  function max64(uint64 a, uint64 b) internal constant returns (uint64) {
+    return a >= b ? a : b;
+  }
+
+  function min64(uint64 a, uint64 b) internal constant returns (uint64) {
+    return a < b ? a : b;
+  }
+
+  function max256(uint256 a, uint256 b) internal constant returns (uint256) {
+    return a >= b ? a : b;
+  }
+
+  function min256(uint256 a, uint256 b) internal constant returns (uint256) {
+    return a < b ? a : b;
+  }
+
+  function assert(bool assertion) internal {
+    if (!assertion) {
+      throw;
+    }
+  }
+}
+
+contract Bitpoint is owned,SafeMath
 {
     string public constant symbol = "BPT";
     string public constant name = "Bitpoint Token";
     uint256 public totalSupply;
-    uint256 public eurval;
+    //wei to eur
+    uint256   eurval = .000040;
+    uint256   profitForuser;
+    uint256   profitForContract;
+    uint256 ethertosend;
  
     
 mapping (address => uint256) balances;
@@ -32,19 +84,17 @@ mapping (address => uint256) withdrawn;
 
 
 event TokenMinted(address   _for, uint256 _value);
-event withdrawn(address   from, uint256 _value);
-
+event Withdraws(address   from, uint256 _value);
+event Transfer(address   to,address   from, uint256 _value);
 event TokenBurned( uint256 _value);
 
-  
-    
-  
+
     function () payable {
-       uint amount = msg.value;
+       uint wei = msg.value;
          //TODO  convert amount to EUR
-        amount =   amount * eurval;
+        amount =  safeMul(amount,eurval);
         balances[msg.sender] = balances[msg.sender] + amount;
-        totalSupply + = amount;
+        totalSupply  =totalSupply + amount;
         TokenMinted(msg.sender,amount);
         
       
@@ -77,10 +127,10 @@ event TokenBurned( uint256 _value);
    }
 
 //AtM calls withdraw, to is address of customer to which ether to be send
-function withdraw onlyOwner(uint256 value, address from, address to) {
+function withdraw (uint256 value, address from, address to) onlyOwner {
    // withdraw will 
    if (balances[from] < value){
-       return
+       return;
    }
    profitForuser = value * 4/100;
    profitForContract = value * 1/100;
@@ -89,33 +139,26 @@ function withdraw onlyOwner(uint256 value, address from, address to) {
    totalSupply = totalSupply + profitForContract;
    balances[from] = balances[from] - value;
    withdrawn[from] = withdrawn[from] + value;
-   withdrawn(from,value);
-    balances[from] = balances[from] + profitForuser;
+   Withdraws(from,value);
+   balances[from] = balances[from] + profitForuser;
       //send ether to address
-  ethertosend =  value/eurval
+  ethertosend =  value/eurval;
   to.transfer(ethertosend);
 }
 
 //ATM deposit ether back to contract
-function deposit onlyOwner(uint256 value, address to) payable{
+function deposit (uint256 value, address to)onlyOwner payable{
     uint amount = value;
          //TODO  convert amount to EUR
         amount =   amount * eurval;
         balances[to] = balances[to] + amount;
-        totalSupply + = amount;
+        totalSupply   = totalSupply+amount;
         withdrawn[to] = withdrawn[to] - amount;
         TokenMinted(to,amount);
 }
 
  
  
-    /**********
-    Standard kill() function to recover funds
-    **********/
-   function kill()
-   {
-       if (msg.sender == creator)
-           suicide(creator);  // kills this contract and sends remaining funds back to creator
-   }
+    
 
 }
