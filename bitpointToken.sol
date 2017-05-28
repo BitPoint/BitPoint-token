@@ -21,85 +21,92 @@ contract owned {
 
 contract Bitpoint is owned  
 {
-   address creator;     
-   uint256 public totalSupply;
-   uint profit; //profit calculation
+    uint256 public totalSupply;
+    uint256 public eurval;
+ 
+    
+mapping (address => uint256) balances;
+mapping (address => uint256) withdrawn;
 
-   struct BitToken{
-       uint256 createdOn;
-       uint256 token;
-   }
-
-mapping (address => BitToken) balances;
 
 event TokenMinted(address   _for, uint256 _value);
+event withdrawn(address   from, uint256 _value);
+
 event TokenBurned( uint256 _value);
 
   
-   function Bitpoint() public  
-   {
-       creator = msg.sender;
-      
-   }
+    
   
     function () payable {
        uint amount = msg.value;
-       //mint token only if address dont have any token
-       if( balances[msg.sender].token==0){
-         balances[msg.sender].token = amount;
-         balances[msg.sender].createdOn = block.timestamp;
-         totalSupply += amount;
-         TokenMinted(msg.sender,amount);
-       }else{
-           return;
-       }
+         //TODO  convert amount to EUR
+        amount =   amount * eurval;
+        balances[msg.sender] = balances[msg.sender] + amount;
+        totalSupply + = amount;
+        TokenMinted(msg.sender,amount);
+        
       
     }
    
     function balanceOf(address _owner) constant returns (uint256 balance) {
-       return balances[_owner].token;
+       return balances[_owner];
+   }
+   function withdrawnFrom(address _owner) constant returns (uint256 balance) {
+       return withdrawn[_owner];
    }
    //return unix timestamp
-    function creationTime(address _owner) constant returns (uint256 createdOn) {
-       return balances[_owner].createdOn;
-   }
-   //not allowed for now
-//     function transfer(address _to, uint256 _value) returns (bool success) {
-     
-//        if (balances[msg.sender] >= _value && _value > 0) {
-//            balances[msg.sender] -= _value;
-//            balances[_to] += _value;
-//            Transfer(msg.sender, _to, _value);
-//            return true;
-//        } else { return false; }
+//     function creationTime(address _owner) constant returns (uint256 createdOn) {
+//        return balances[_owner].createdOn;
 //    }
+    
+    function transfer(address _to, uint256 _value) returns (bool success) {
+     
+       if (balances[msg.sender] >= _value && _value > 0) {
+           balances[msg.sender] -= _value;
+           balances[_to] += _value;
+           Transfer(msg.sender, _to, _value);
+           return true;
+       } else { return false; }
+   }
   
   function getTotalSupply() constant returns (uint) // this doesn't have anything to do with the act of greeting
    {                                                    
        return totalSupply;
    }
 
-function withdraw(){
-    // get balance of user
-    var  amount = balances[msg.sender].token;
-    //TODO: calculate profit for user
-    profit = calculateProfit(msg.sender);
-    amount = amount + profit;
-    totalSupply = totalSupply + profit;
-    TokenMinted(msg.sender,amount);
-    msg.sender.transfer(amount);
-    totalSupply = totalSupply - amount;
-    TokenBurned(msg.sender,amount);
-
+//AtM calls withdraw, to is address of customer to which ether to be send
+function withdraw onlyOwner(uint256 value, address from, address to) {
+   // withdraw will 
+   if (balances[from] < value){
+       return
+   }
+   profitForuser = value * 4/100;
+   profitForContract = value * 1/100;
+   value = value - profitForuser;
+   value = value - profitForContract;
+   totalSupply = totalSupply + profitForContract;
+   balances[from] = balances[from] - value;
+   withdrawn[from] = withdrawn[from] + value;
+   withdrawn(from,value);
+    balances[from] = balances[from] + profitForuser;
+      //send ether to address
+  ethertosend =  value/eurval
+  to.transfer(ethertosend);
 }
 
-//TODO
-function calculateProfit(address _sender)constant returns (uint256 amount){
-  return balances[_sender].token;
+//ATM deposit ether back to contract
+function deposit onlyOwner(uint256 value, address to) payable{
+    uint amount = value;
+         //TODO  convert amount to EUR
+        amount =   amount * eurval;
+        balances[to] = balances[to] + amount;
+        totalSupply + = amount;
+        withdrawn[to] = withdrawn[to] - amount;
+        TokenMinted(to,amount);
 }
-//    event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
-  
+ 
+ 
     /**********
     Standard kill() function to recover funds
     **********/
