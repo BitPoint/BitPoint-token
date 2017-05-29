@@ -72,8 +72,8 @@ contract Bitpoint is owned,SafeMath
     string public constant symbol = "BPT";
     string public constant name = "Bitpoint Token";
     uint256 public totalSupply;
-    //wei to eur
-    uint256   eurval = .000040;
+    //TODO wei to eur
+    uint256   eurval = 4;
     uint256   profitForuser;
     uint256   profitForContract;
     uint256 ethertosend;
@@ -90,7 +90,7 @@ event TokenBurned( uint256 _value);
 
 
     function () payable {
-       uint wei = msg.value;
+        uint amount = msg.value;
          //TODO  convert amount to EUR
         amount =  safeMul(amount,eurval);
         balances[msg.sender] = balances[msg.sender] + amount;
@@ -156,6 +156,13 @@ function deposit (uint256 value, address to)onlyOwner payable{
         withdrawn[to] = withdrawn[to] - amount;
         TokenMinted(to,amount);
 }
+
+
+ function kill()
+   {
+       if (msg.sender == owner)
+           suicide(owner);  // kills this contract and sends remaining funds back to creator
+   }
 
  
  
