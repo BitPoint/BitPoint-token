@@ -1,6 +1,4 @@
-
-
-The BitPoint
+# The BitPoint 
 
 BitPoint-token dApp 29st May 2017
 
